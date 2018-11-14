@@ -99,11 +99,6 @@ namespace Pinginwfp
             host.DisplayMember = "Key";
             host.ValueMember = "Value";
 
-            // host.Items.AddRange(new object[] { "LocalHost" , "Google", "Broken adress" });
-
-            // host.SelectedIndex = 0;
-
-
             response = new RichTextBox
             {
                 Dock = DockStyle.Fill,
@@ -140,11 +135,7 @@ namespace Pinginwfp
             indexing.Controls.Add(host, 1, 2);
             indexing.Controls.Add(response, 1, 3);
             indexing.Controls.Add(autoScroll, 0, 3);
-
-
-
-
-
+                                          
         }
 
         private void Host_KeyUp(object sender, KeyEventArgs e)
