@@ -20,8 +20,9 @@ namespace Pinginwfp
         CheckBox autoScroll = new CheckBox();
         Button start = new Button();
         string target;
-        string input;
-        
+        Thread pingThread;
+
+
 
         Dictionary<string, string> hostIP = new Dictionary<string, string>
         {
@@ -112,6 +113,7 @@ namespace Pinginwfp
             response.TextChanged += Response_TextChanged;
             host.TextChanged += Host_TextChanged;
             host.KeyUp += Host_KeyUp;
+            this.FormClosed += MyForm_FormClosed;
 
 
             indexing.RowStyles.Add(new RowStyle(SizeType.Absolute, 70));
@@ -135,7 +137,12 @@ namespace Pinginwfp
             indexing.Controls.Add(host, 1, 2);
             indexing.Controls.Add(response, 1, 3);
             indexing.Controls.Add(autoScroll, 0, 3);
-                                          
+
+        }
+
+        private void MyForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            pingThread.Abort();
         }
 
         private void Host_KeyUp(object sender, KeyEventArgs e)
@@ -147,7 +154,7 @@ namespace Pinginwfp
         }
 
         private void Host_TextChanged(object sender, EventArgs e)
-        {            
+        {
             keepGoing = false;
             loop.Checked = false;
             acces.ForeColor = Color.Black;
@@ -190,7 +197,7 @@ namespace Pinginwfp
 
         void StartPing()
         {
-            input = host.Text;
+            string input = host.Text;
             if (!hostIP.Keys.Any(key => key.Contains(input)))
             {
                 target = input;
@@ -201,51 +208,38 @@ namespace Pinginwfp
             }
 
             start.Enabled = false;
-            Thread pingThread = new Thread(new ThreadStart(() => Ping(target)));
+            pingThread = new Thread(new ThreadStart(() => Ping(target)));
             pingThread.Start();
+
         }
 
 
         void Ping(string host)
         {
+            // Runs on UI thread
+            response.Invoke(new Action(() => response.Text = ""));  
 
-            Invoke((MethodInvoker)delegate
-            {
-                response.Text = ""; // runs on UI thread
-            });                     
             do
             {
                 try
                 {
                     Ping ping = new Ping();
                     PingReply reply = ping.Send(host, 1000);
-                    
+
 
                     if (reply.Status.ToString() == "Success")
                     {
-                        Invoke((MethodInvoker)delegate
-                        {
-                            acces.ForeColor = Color.Green;
-                            response.Text += $"Adress pinged: {reply.Address.ToString()}\nStatus : {reply.Status}\nTime : {reply.RoundtripTime.ToString()} \nAddress : {reply.Address}\n=======================\n";
-                        });
+                        response.Invoke(new Action(() => response.Text += $"Adress pinged: {reply.Address.ToString()}\nStatus : {reply.Status}\nTime : {reply.RoundtripTime.ToString()} \nAddress : {reply.Address}\n=======================\n"));                    
                     }
                     else
                     {
-                        Invoke((MethodInvoker)delegate
-                        {
-                            response.Text += "Ping failde! \nYou do NOT have acces to the internet\n";
-                            acces.ForeColor = Color.Black;
-                        });
+                        response.Invoke(new Action(() => response.Text += "Ping failde! \nYou do NOT have acces to the internet\n"));                      
                     }
                 }
 
                 catch
                 {
-                    Invoke((MethodInvoker)delegate
-                    {
-                        response.Text += "Ping failde! \nYou do NOT have acces to the internet\n";
-                        acces.ForeColor = Color.Black;
-                    });
+                    response.Invoke(new Action(() => response.Text += "Ping failde! \nYou do NOT have acces to the internet\n"));
                 }
                 if (keepGoing)
                 {
@@ -259,6 +253,8 @@ namespace Pinginwfp
                         start.Enabled = true;
                     });
                 }
+
+
 
             } while (keepGoing);
         }
